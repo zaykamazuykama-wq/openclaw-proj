@@ -13,6 +13,11 @@ import { Globe2, RotateCcw } from "lucide-react"
 export default function Home() {
   const [result, setResult] = useState<ProcessingResult | null>(null)
   const [activeLineIndex, setActiveLineIndex] = useState(0)
+  const [systemStatus, setSystemStatus] = useState<{
+    ffmpeg: { available: boolean; message: string }
+    ytdlp: { available: boolean; message: string }
+    elevenlabs: { configured: boolean; voiceMappingsConfigured: boolean; voiceMappingCount: number; message: string }
+  } | null>(null)
   const [restoreJobId, setRestoreJobId] = useState("")
   const [restoreStatus, setRestoreStatus] = useState<{
     state: "idle" | "loading" | "error" | "done"
@@ -96,6 +101,28 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false
 
+    async function loadSystemStatus() {
+      try {
+        const response = await fetch("/api/system/status")
+        const data = await response.json()
+        if (!cancelled) {
+          setSystemStatus(
+            data?.ffmpeg && data?.ytdlp && data?.elevenlabs
+              ? {
+                  ffmpeg: data.ffmpeg,
+                  ytdlp: data.ytdlp,
+                  elevenlabs: data.elevenlabs,
+                }
+              : null
+          )
+        }
+      } catch {
+        if (!cancelled) {
+          setSystemStatus(null)
+        }
+      }
+    }
+
     async function loadRecentJobs() {
       try {
         const response = await fetch("/api/status/recent")
@@ -110,6 +137,7 @@ export default function Home() {
       }
     }
 
+    loadSystemStatus()
     loadRecentJobs()
     return () => {
       cancelled = true
@@ -131,6 +159,16 @@ export default function Home() {
       : null
 
   const isProcessing = Boolean(result?.stage && result.stage !== "idle" && result.stage !== "done" && result.stage !== "error")
+  const setupWarnings = systemStatus
+    ? [
+        !systemStatus.ffmpeg.available ? "ffmpeg is required for upload processing, remix, and export." : null,
+        !systemStatus.ytdlp.available ? "yt-dlp is missing, so Paste URL may be unavailable locally." : null,
+        !systemStatus.elevenlabs.configured ? "ElevenLabs is not configured, so provider-backed voice generation previews will stay unavailable." : null,
+        systemStatus.elevenlabs.configured && !systemStatus.elevenlabs.voiceMappingsConfigured
+          ? "ElevenLabs is connected, but no voice mappings were found for the current cast voices."
+          : null,
+      ].filter(Boolean)
+    : []
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fcfaf5_0%,#f0e4d0_52%,#ede7dc_100%)] px-4 py-6 sm:px-6 sm:py-8">
@@ -179,6 +217,64 @@ export default function Home() {
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <div className="space-y-6">
             <VideoUpload onStart={handleStart} onSuccess={handleSuccess} />
+            <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">Local setup readiness</div>
+                <div className="text-sm text-stone-500">Read-only checks from the current backend</div>
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    label: "ffmpeg",
+                    ready: Boolean(systemStatus?.ffmpeg.available),
+                    detail: systemStatus?.ffmpeg.available ? "Available for media processing" : "Missing",
+                  },
+                  {
+                    label: "yt-dlp",
+                    ready: Boolean(systemStatus?.ytdlp.available),
+                    detail: systemStatus?.ytdlp.available ? "Available for URL import" : "Missing",
+                  },
+                  {
+                    label: "ElevenLabs",
+                    ready: Boolean(systemStatus?.elevenlabs.configured),
+                    detail: systemStatus?.elevenlabs.configured
+                      ? systemStatus?.elevenlabs.voiceMappingsConfigured
+                        ? `${systemStatus.elevenlabs.voiceMappingCount} voice mapping${systemStatus.elevenlabs.voiceMappingCount === 1 ? "" : "s"} ready`
+                        : "API key present, no voice mappings yet"
+                      : "Not configured",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-stone-900">{item.label}</div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+                          item.ready ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"
+                        }`}
+                      >
+                        {item.ready ? "ready" : "missing"}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-sm text-stone-600">{item.detail}</div>
+                  </div>
+                ))}
+              </div>
+              {systemStatus ? (
+                setupWarnings.length > 0 ? (
+                  <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {setupWarnings.join(" ")}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    Local setup looks ready for upload, media processing, and optional provider-backed voice work.
+                  </div>
+                )
+              ) : (
+                <div className="mt-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+                  Runtime readiness checks are unavailable right now.
+                </div>
+              )}
+            </div>
             <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">Restore job</div>
               <div className="mt-3 flex flex-col gap-3 sm:flex-row">

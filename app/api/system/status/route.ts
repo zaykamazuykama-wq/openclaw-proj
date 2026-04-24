@@ -35,6 +35,10 @@ async function hasPython() {
 
 export async function GET() {
   const root = process.cwd()
+  const elevenLabsApiKeyConfigured = Boolean(process.env.ELEVENLABS_API_KEY?.trim())
+  const elevenLabsVoiceMappingCount = Object.keys(process.env).filter(
+    (key) => key.startsWith("ELEVENLABS_VOICE_ID_") && Boolean(process.env[key]?.trim())
+  ).length
 
   const ytDlpPath = firstExisting([
     path.join(root, "yt-dlp.exe"),
@@ -65,6 +69,16 @@ export async function GET() {
     ffmpeg: {
       available: !!ffmpegPath,
       message: ffmpegPath ? `Found: ${ffmpegPath}` : "ffmpeg not found",
+    },
+    elevenlabs: {
+      configured: elevenLabsApiKeyConfigured,
+      voiceMappingsConfigured: elevenLabsVoiceMappingCount > 0,
+      voiceMappingCount: elevenLabsVoiceMappingCount,
+      message: elevenLabsApiKeyConfigured
+        ? elevenLabsVoiceMappingCount > 0
+          ? "ElevenLabs API key and voice mappings are configured"
+          : "ElevenLabs API key is configured, but no voice mappings were found"
+        : "ElevenLabs API key is not configured",
     },
     python: {
       available: pythonAvailable,
