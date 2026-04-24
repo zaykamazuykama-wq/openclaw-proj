@@ -1,0 +1,150 @@
+{
+  "version": "1.0.0",
+  "locale": "mn-MN",
+  "globalRules": {
+    "nativeRealism": true,
+    "cleanPronunciation": true,
+    "naturalSpokenMongolian": true,
+    "avoidForeignAccent": true,
+    "avoidWoodenReading": true,
+    "avoidExaggeratedActing": true,
+    "studioClean": true
+  },
+  "baseVoices": [
+    {
+      "voiceId": "F1",
+      "code": "girl_child_mn",
+      "genderClass": "female",
+      "ageClass": "child",
+      "displayName": "Girl Child MN",
+      "basePitch": 5,
+      "baseTimbre": "bright",
+      "baseEnergy": "medium",
+      "defaultEmotion": "neutral",
+      "description": "Native Mongolian child-girl base voice with clean pronunciation and gentle spoken delivery."
+    },
+    {
+      "voiceId": "F2",
+      "code": "girl_teen_mn",
+      "genderClass": "female",
+      "ageClass": "teen",
+      "displayName": "Girl Teen MN",
+      "basePitch": 4,
+      "baseTimbre": "soft",
+      "baseEnergy": "medium",
+      "defaultEmotion": "neutral",
+      "description": "Native Mongolian teen-girl base voice tuned for clear everyday dialogue and believable youth tone."
+    },
+    {
+      "voiceId": "F3",
+      "code": "woman_young_mn",
+      "genderClass": "female",
+      "ageClass": "young_adult",
+      "displayName": "Woman Young MN",
+      "basePitch": 2,
+      "baseTimbre": "warm",
+      "baseEnergy": "medium",
+      "defaultEmotion": "neutral",
+      "description": "Native Mongolian young-adult female base voice for natural spoken phrasing across vlog, film, and interview use."
+    },
+    {
+      "voiceId": "F4",
+      "code": "woman_mature_mn",
+      "genderClass": "female",
+      "ageClass": "mature_adult",
+      "displayName": "Woman Mature MN",
+      "basePitch": 1,
+      "baseTimbre": "warm",
+      "baseEnergy": "low",
+      "defaultEmotion": "serious",
+      "description": "Native Mongolian mature female base voice with stable studio-clean articulation for narration and dialogue."
+    },
+    {
+      "voiceId": "F5",
+      "code": "woman_elder_mn",
+      "genderClass": "female",
+      "ageClass": "elder",
+      "displayName": "Woman Elder MN",
+      "basePitch": -1,
+      "baseTimbre": "husky",
+      "baseEnergy": "low",
+      "defaultEmotion": "caring",
+      "description": "Native Mongolian elder female base voice with gentle age texture and calm natural realism."
+    },
+    {
+      "voiceId": "M1",
+      "code": "boy_child_mn",
+      "genderClass": "male",
+      "ageClass": "child",
+      "displayName": "Boy Child MN",
+      "basePitch": 4,
+      "baseTimbre": "bright",
+      "baseEnergy": "high",
+      "defaultEmotion": "neutral",
+      "description": "Native Mongolian child-boy base voice designed for clear youthful dialogue without exaggerated acting."
+    },
+    {
+      "voiceId": "M2",
+      "code": "boy_teen_mn",
+      "genderClass": "male",
+      "ageClass": "teen",
+      "displayName": "Boy Teen MN",
+      "basePitch": 2,
+      "baseTimbre": "thin",
+      "baseEnergy": "medium",
+      "defaultEmotion": "neutral",
+      "description": "Native Mongolian teen-boy base voice with controlled energy and clean pronunciation for modern dialogue."
+    },
+    {
+      "voiceId": "M3",
+      "code": "man_young_mn",
+      "genderClass": "male",
+      "ageClass": "young_adult",
+      "displayName": "Man Young MN",
+      "basePitch": 0,
+      "baseTimbre": "warm",
+      "baseEnergy": "medium",
+      "defaultEmotion": "neutral",
+      "description": "Native Mongolian young-adult male base voice for believable conversation, film scenes, and narration."
+    },
+    {
+      "voiceId": "M4",
+      "code": "man_mature_mn",
+      "genderClass": "male",
+      "ageClass": "mature_adult",
+      "displayName": "Man Mature MN",
+      "basePitch": -2,
+      "baseTimbre": "deep",
+      "baseEnergy": "low",
+      "defaultEmotion": "serious",
+      "description": "Native Mongolian mature male base voice with deep, steady presence and studio-clean clarity."
+    },
+    {
+      "voiceId": "M5",
+      "code": "man_elder_mn",
+      "genderClass": "male",
+      "ageClass": "elder",
+      "displayName": "Man Elder MN",
+      "basePitch": -3,
+      "baseTimbre": "husky",
+      "baseEnergy": "low",
+      "defaultEmotion": "caring",
+      "description": "Native Mongolian elder male base voice with age texture, restrained delivery, and natural spoken realism."
+    }
+  ],
+  "controls": {
+    "timbre": ["soft", "bright", "warm", "deep", "thin", "husky"],
+    "energy": ["low", "medium", "high"],
+    "emotion": ["neutral", "happy", "sad", "angry", "caring", "excited", "serious"]
+  },
+  "fallbacks": {
+    "unknown_female": {
+      "voiceId": "F3",
+      "code": "woman_young_mn"
+    },
+    "unknown_male": {
+      "voiceId": "M3",
+      "code": "man_young_mn"
+    }
+  }
+}
