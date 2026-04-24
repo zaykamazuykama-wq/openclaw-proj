@@ -443,7 +443,6 @@ export async function POST(req: NextRequest) {
     const remixArtifacts = prepareRemixArtifacts({
       mode: "keep_background",
       audioArtifacts,
-      remixArtifacts,
       segments: dubbingSegments,
     })
 
