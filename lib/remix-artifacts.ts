@@ -24,6 +24,36 @@ export type RemixArtifacts = {
   segmentCount: number
 }
 
+export function normalizeRemixMode(mode?: string | null): RemixMode {
+  if (mode === "replace_music" || mode === "voice_plus_ambience") return mode
+  return "keep_background"
+}
+
+export function mergeRemixArtifacts(
+  current: RemixArtifacts | undefined,
+  patch: Partial<RemixArtifacts> & { mode?: RemixMode },
+  segmentCount = current?.segmentCount || 0
+): RemixArtifacts {
+  const mode = patch.mode || current?.mode || "keep_background"
+  return {
+    mode,
+    sourceMixPath: patch.sourceMixPath ?? current?.sourceMixPath,
+    dialogueStemPath: patch.dialogueStemPath ?? current?.dialogueStemPath,
+    backgroundStemPath: patch.backgroundStemPath ?? current?.backgroundStemPath,
+    musicStemPath: patch.musicStemPath ?? current?.musicStemPath,
+    ambienceStemPath: patch.ambienceStemPath ?? current?.ambienceStemPath,
+    dubbedSegmentAudioPaths: patch.dubbedSegmentAudioPaths ?? current?.dubbedSegmentAudioPaths ?? [],
+    mixedAudioPath: patch.mixedAudioPath ?? current?.mixedAudioPath,
+    replacementMusicPath: patch.replacementMusicPath ?? current?.replacementMusicPath,
+    finalVideoPath: patch.finalVideoPath ?? current?.finalVideoPath,
+    exportReady: patch.exportReady ?? current?.exportReady ?? false,
+    fallbackUsed: patch.fallbackUsed ?? current?.fallbackUsed ?? false,
+    warnings: patch.warnings ?? current?.warnings ?? [],
+    selectedVoices: patch.selectedVoices ?? current?.selectedVoices ?? [],
+    segmentCount: patch.segmentCount ?? current?.segmentCount ?? segmentCount,
+  }
+}
+
 export function prepareRemixArtifacts({
   mode,
   audioArtifacts,
@@ -33,7 +63,7 @@ export function prepareRemixArtifacts({
   audioArtifacts?: AudioArtifacts
   segments?: TranscriptSegment[]
 }): RemixArtifacts {
-  const safeMode = mode || "keep_background"
+  const safeMode = normalizeRemixMode(mode)
   const safeSegments = Array.isArray(segments) ? segments : []
   const selectedVoices = Array.from(
     new Map(

@@ -3,6 +3,7 @@ import os from "os"
 import path from "path"
 import { NextResponse } from "next/server"
 import { getJob, setJob } from "@/lib/job-store"
+import { mergeRemixArtifacts } from "@/lib/remix-artifacts"
 
 const SUPPORTED_REPLACEMENT_MUSIC_EXTENSIONS = new Set([".mp3", ".wav", ".m4a"])
 
@@ -21,18 +22,21 @@ function buildReplacementMusicResponse(jobId: string, job: ReturnType<typeof get
     return NextResponse.json({ ok: false, errorCode: "NOT_FOUND", message: "Job not found." }, { status: 404 })
   }
 
-  const nextRemixArtifacts = {
-    ...job.remixArtifacts,
-    mode: "replace_music" as const,
-    replacementMusicPath,
-    exportReady: false,
-    warnings: [
-      ...((job.remixArtifacts?.warnings || []).filter(
-        (warning) => warning !== "Replacement music is not attached yet. Remix contract is prepared but final music swap is not export-ready."
-      )),
-      "Replace-music foundation is prepared. Final replace-music mixing is not implemented yet.",
-    ],
-  }
+  const nextRemixArtifacts = mergeRemixArtifacts(
+    job.remixArtifacts,
+    {
+      mode: "replace_music",
+      replacementMusicPath,
+      exportReady: false,
+      warnings: [
+        ...((job.remixArtifacts?.warnings || []).filter(
+          (warning) => warning !== "Replacement music is not attached yet. Remix contract is prepared but final music swap is not export-ready."
+        )),
+        "Replace-music foundation is prepared. Final replace-music mixing is not implemented yet.",
+      ],
+    },
+    Array.isArray(job.segments) ? job.segments.length : 0
+  )
 
   setJob(jobId, {
     ...job,

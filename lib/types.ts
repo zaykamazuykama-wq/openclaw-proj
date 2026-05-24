@@ -28,11 +28,24 @@ export type VoiceMatchSummary = {
   providerPreviewAvailable: boolean
 }
 
+export type SpeakerSummary = {
+  speakerId: string
+  segmentCount: number
+}
+
 export interface TranscriptSegment {
   start: number
   end: number
   sourceText: string
   mongolianText: string
+  speakerId?: string
+  emotion?: string
+  intensity?: number
+  power?: number
+  speed?: number
+  pitch?: number
+  speechAct?: string
+  pauseStyle?: "none" | "breath" | "dramatic" | "hesitation"
   voiceSelection?: Omit<SelectedVoiceProfile, "speakerId">
   chosenVoiceId?: string
   chosenVoiceName?: string
@@ -58,6 +71,7 @@ export interface ProcessingResult {
   fullTranscript: string
   fullTranslation: string
   segments: TranscriptSegment[]
+  speakerSummary?: SpeakerSummary[]
   voiceMatchSummary?: VoiceMatchSummary
   audioArtifacts?: AudioArtifacts
   remixArtifacts?: RemixArtifacts

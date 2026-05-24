@@ -6,11 +6,13 @@ import path from "path"
 import { createWriteStream } from "fs"
 import { Readable } from "stream"
 import { pipeline } from "stream/promises"
+import type { ReadableStream as NodeReadableStream } from "stream/web"
 import { NextRequest, NextResponse } from "next/server"
 import { setJob } from "@/lib/job-store"
 import { prepareDubbingSegments } from "@/lib/dubbing/prepare-dubbing-segments"
 import { prepareAudioArtifacts } from "@/lib/audio-artifacts"
 import { prepareRemixArtifacts } from "@/lib/remix-artifacts"
+import { runAnalysisViaWorker } from "@/lib/worker-analysis"
 
 const SUPPORTED_EXTENSIONS = new Set([".mp4", ".mov", ".mkv", ".webm", ".mp3", ".wav", ".m4a"])
 const MAX_UPLOAD_MB = Number(process.env.MAX_UPLOAD_MB || "500")
@@ -94,13 +96,6 @@ function runCommand(file: string, args: string[], cwd?: string, timeout = 1000 *
   })
 }
 
-function firstExisting(paths: string[]) {
-  for (const candidate of paths) {
-    if (fs.existsSync(candidate)) return candidate
-  }
-  return null
-}
-
 async function commandExists(command: string, args: string[] = ["--version"]) {
   try {
     await runCommand(command, args)
@@ -108,23 +103,6 @@ async function commandExists(command: string, args: string[] = ["--version"]) {
   } catch {
     return false
   }
-}
-
-async function resolvePython() {
-  const candidates = [
-    { file: "py", prefixArgs: ["-3"] },
-    { file: "py", prefixArgs: [] },
-    { file: "python", prefixArgs: [] },
-    { file: "python3", prefixArgs: [] },
-  ]
-
-  for (const candidate of candidates) {
-    if (await commandExists(candidate.file, [...candidate.prefixArgs, "--version"])) {
-      return candidate
-    }
-  }
-
-  throw new Error("Python was not found. Install Python 3 and make sure `py`, `python`, or `python3` works.")
 }
 
 function isCompatibleLocalBinary(binaryPath: string) {
@@ -208,7 +186,7 @@ function blockedLinkError(message: string) {
 }
 
 async function writeUploadedFile(file: File, destinationPath: string) {
-  const nodeStream = Readable.fromWeb(file.stream() as globalThis.ReadableStream<Uint8Array>)
+  const nodeStream = Readable.fromWeb(file.stream() as unknown as NodeReadableStream<Uint8Array>)
   await pipeline(nodeStream, createWriteStream(destinationPath))
 }
 
@@ -351,15 +329,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const python = await resolvePython()
-    const scriptPath = firstExisting([
-      path.join(root, "scripts", "transcribe_translate.py"),
-      path.join(root, "..", "scripts", "transcribe_translate.py"),
-    ])
-    if (!scriptPath) {
-      return errorResponse(logs, "scripts/transcribe_translate.py was not found.", "transcribe", 500)
-    }
-
     stage = "extract"
     pushLog(logs, "Extracting mono 16k WAV audio with ffmpeg...")
     const wavPath = path.join(runDir, "audio.wav")
@@ -382,27 +351,20 @@ export async function POST(req: NextRequest) {
     stage = "transcribe"
     pushLog(logs, `Transcribing with faster-whisper (${process.env.WHISPER_MODEL_SIZE || "tiny"})...`)
     const jsonPath = path.join(runDir, "result.json")
-    await runCommand(python.file, [
-      ...python.prefixArgs,
-      scriptPath,
-      "--input",
-      audioArtifacts.transcriptionInputPath,
-      "--output",
-      jsonPath,
-      "--target-language",
-      "mn",
-      "--whisper-model",
-      process.env.WHISPER_MODEL_SIZE || "tiny",
-    ])
-
-    if (!fs.existsSync(jsonPath)) {
-      return errorResponse(logs, "Processing finished but result.json was not created.", "transcribe", 500)
-    }
-
-    const parsed = JSON.parse(fs.readFileSync(jsonPath, "utf-8"))
-    if (!Array.isArray(parsed?.segments) || parsed.segments.length === 0) {
-      return errorResponse(logs, "The transcript is empty. Please try another media file.", "transcribe", 500)
-    }
+    const analysisResult = await runAnalysisViaWorker({
+      root,
+      inputPath: audioArtifacts.transcriptionInputPath,
+      outputPath: jsonPath,
+      targetLanguage: "mn",
+      whisperModel: process.env.WHISPER_MODEL_SIZE || "tiny",
+    })
+    pushLog(
+      logs,
+      analysisResult.execution === "worker"
+        ? "Analysis executed on the configured worker."
+        : "Analysis executed locally."
+    )
+    const parsed = analysisResult.parsed
 
     stage = "translate"
     pushLog(logs, "Translation to Mongolian completed.")
@@ -461,6 +423,7 @@ export async function POST(req: NextRequest) {
       fullTranscript: parsed.full_transcript || "",
       fullTranslation: parsed.full_translation || "",
       segments: dubbingSegments,
+      speakerSummary: Array.isArray(parsed.speaker_summary) ? parsed.speaker_summary : undefined,
       voiceMatchSummary,
       audioArtifacts,
       remixArtifacts,

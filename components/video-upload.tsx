@@ -43,6 +43,7 @@ export function VideoUpload({ onStart, onSuccess }: VideoUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [activeTab, setActiveTab] = useState<"upload" | "url">("upload")
   const [error, setError] = useState("")
+  const sourceType: ProcessingResult["sourceType"] = activeTab === "upload" ? "file" : "url"
 
   const handleSubmit = async () => {
     if (isUploading) return
@@ -71,7 +72,7 @@ export function VideoUpload({ onStart, onSuccess }: VideoUploadProps) {
             : "URL processing started. Public links may work, but protected links will fail gracefully.",
         ],
         sourceName: activeTab === "upload" ? file?.name || "" : url.trim(),
-        sourceType: activeTab,
+        sourceType,
         detectedLanguage: "",
         fullTranscript: "",
         fullTranslation: "",
