@@ -87,7 +87,7 @@ function runCommand(file: string, args: string[], cwd?: string, timeout = 1000 *
       },
       (error, stdout, stderr) => {
         if (error) {
-          reject(new Error((stderr || stdout || error.message || "Command failed").trim()))
+          reject(new Error((stderr || stdout || getErrorMessage(error) || "Command failed").trim()))
           return
         }
         resolve({ stdout, stderr })
@@ -162,6 +162,10 @@ function assertSupportedExtension(filename: string) {
   }
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function blockedLinkError(message: string) {
   const clean = (message || "").trim()
   const blockedPatterns = [
@@ -213,8 +217,8 @@ async function downloadUrlToFile(
       ],
       runDir
     )
-  } catch (error: any) {
-    throw new Error(blockedLinkError(error?.message || "URL download failed"))
+  } catch (error: unknown) {
+    throw new Error(blockedLinkError(getErrorMessage(error) || "URL download failed"))
   }
 
   const downloaded = fs
@@ -433,8 +437,8 @@ export async function POST(req: NextRequest) {
 
     setJob(jobId, result)
     return NextResponse.json(result)
-  } catch (error: any) {
-    const message = error?.message || "Unknown runtime error."
+  } catch (error: unknown) {
+    const message = getErrorMessage(error) || "Unknown runtime error."
     return errorResponse(logs, message, stage === "done" ? "error" : stage, 500)
   }
 }
