@@ -1,3 +1,8 @@
+> **LEGACY REPOSITORY — DO NOT START NEW DEVELOPMENT HERE**
+>
+> Canonical project: `zaykamazuykama-wq/mongolian-voice-api`.
+> Useful functionality is being consolidated there under PR #40 / Issue #41. Keep this repository only for migration/history until retirement verification is complete.
+
 # Mongolian Media Translator
 
 Minimal patch version of the existing Next.js app with an upload-first workflow for transcript review, translation, voice matching, and early remix/export testing.
